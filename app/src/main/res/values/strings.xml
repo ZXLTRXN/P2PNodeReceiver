@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">P2PNodeReciever</string>
-    <string name="error_message">Error</string>
+    <string name="error_message">Something happened</string>
+    <string name="error_message_timeout">Timeout error</string>
+    <string name="error_message_cid">Wrong cid</string>
+    <string name="empty_message">Empty</string>
+    <string name="fetch">Fetch</string>
 </resources>

@@ -18,16 +18,17 @@ import java.util.concurrent.CompletableFuture
 
 class SimpleServiceLocator {
     companion object {
+
+        const val PEER_ADDRESS = "12D3KooWKiqj21VphU2eE25438to5xeny6eP6d3PXT93ZczagPLT"
+
+        const val ADDRESS = "/ip4/95.143.188.166/tcp/4001/p2p/$PEER_ADDRESS"
+
         fun getIPFS(): EmbeddedIpfs {
             val swarmAddresses: List<MultiAddress> = listOf(
-//                MultiAddress("/ip6/::/tcp/4001")
             )
             val bootstrapAddresses: List<MultiAddress> =
                 listOf(
-//                    MultiAddress("/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa")
-//                    MultiAddress("/dnsaddr/ipfs.infra.cf.team/p2p/12D3KooWKiqj21VphU2eE25438to5xeny6eP6d3PXT93ZczagPLT")
-//                    MultiAddress("/dns4/ipfs.infra.cf.team/p2p/12D3KooWKiqj21VphU2eE25438to5xeny6eP6d3PXT93ZczagPLT")
-                    MultiAddress("/ip4/95.143.188.166/tcp/4001/p2p/12D3KooWKiqj21VphU2eE25438to5xeny6eP6d3PXT93ZczagPLT")
+                    MultiAddress(ADDRESS)
                 )
             val authorizer =
                 BlockRequestAuthoriser { _, _, _ ->
@@ -58,8 +59,7 @@ class SimpleServiceLocator {
         val ipfsStreamer: IpfsStreamer
             get() {
                 return IpfsStreamerImpl(
-                    getIPFS(),
-                    "12D3KooWKiqj21VphU2eE25438to5xeny6eP6d3PXT93ZczagPLT",
+                    { getIPFS() },
                     Dispatchers.IO
                 )
             }

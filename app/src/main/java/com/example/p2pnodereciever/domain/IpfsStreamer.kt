@@ -3,7 +3,11 @@ package com.example.p2pnodereciever.domain
 import kotlinx.coroutines.flow.Flow
 
 interface IpfsStreamer {
-    fun getBlocks(
+    suspend fun getBlocks(
         cidString: String,
-    ): Flow<ByteArray>
+    ): List<ByteArray>
+
+    fun ping(
+        repeatEveryMillis: Long = 2000L,
+    ): Flow<Result<Long>>
 }

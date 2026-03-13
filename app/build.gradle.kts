@@ -9,6 +9,29 @@ android {
         version = release(36)
     }
 
+    packaging {
+        resources {
+            pickFirsts +=
+                listOf(
+                    "META-INF/io.netty.versions.properties",
+                    "META-INF/native-image/io.netty.incubator/netty-incubator-codec-native-quic/*",
+                    "META-INF/native-image/io.netty/netty-codec-native-quic/*",
+                    "META-INF/*.SF",
+                    "META-INF/*.DSA",
+                    "META-INF/*.RSA",
+                    "META-INF/INDEX.LIST",
+                    "META-INF/license/*",
+                )
+        }
+    }
+
+    configurations.all {
+        exclude(
+            group = "org.bouncycastle",
+            module = "bcpkix-jdk18on"
+        )
+    }
+
     defaultConfig {
         applicationId = "com.example.p2pnodereciever"
         minSdk = 29
@@ -40,6 +63,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -53,4 +77,21 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation(libs.nabu) {
+        exclude(
+            group = "org.bouncycastle",
+            module = "bcutil-jdk15on"
+        )
+        exclude(
+            group = "org.bouncycastle",
+            module = "bcprov-jdk15on"
+        )
+        exclude(
+            group = "tech.pegasys",
+            module = "noise-java"
+        )
+    }
+
+    implementation(libs.noise.java)
 }

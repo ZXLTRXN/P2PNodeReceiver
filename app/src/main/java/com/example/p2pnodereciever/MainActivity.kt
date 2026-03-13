@@ -11,6 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.p2pnodereciever.di.SimpleServiceLocator
+import com.example.p2pnodereciever.presentation.NodeScreenStateful
+import com.example.p2pnodereciever.presentation.NodeViewModel
 import com.example.p2pnodereciever.ui.theme.P2PNodeRecieverTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,10 +26,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             P2PNodeRecieverTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                    val viewModel: NodeViewModel = viewModel(
+                        factory = object : ViewModelProvider.Factory {
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                return NodeViewModel(ipfsStreamer = SimpleServiceLocator.ipfsStreamer) as T
+                            }
+                        }
                     )
+
+                    NodeScreenStateful(modifier = Modifier.padding(innerPadding), viewModel = viewModel)
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.example.p2pnodereciever.data
 
+import android.util.Log
 import com.example.p2pnodereciever.di.SimpleServiceLocator.Companion.ADDRESS
 import com.example.p2pnodereciever.di.SimpleServiceLocator.Companion.PEER_ADDRESS
 import com.example.p2pnodereciever.domain.IPFSCIDException
@@ -14,6 +15,7 @@ import io.libp2p.protocol.PingController
 import io.libp2p.protocol.PingProtocol
 import io.libp2p.protocol.PingTimeoutException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -38,26 +40,19 @@ class IpfsStreamerImpl(
         val peerId = PeerId.fromBase58(PEER_ADDRESS)
         val multiaddr = Multiaddr(ADDRESS)
 
-        val ipfs = ipfsCreate()
-
-        val pingInitiator: PingController = try {
-            ipfs.node.newStream<PingProtocol.PingInitiator>(
-                listOf("/ipfs/ping/1.0.0"),
-                peerId,
-                multiaddr
-            ).controller.await()
-        } catch (ex: CancellationException) {
-            ipfs.stopCatching()
-            throw ex
-        } catch (ex: Exception) {
-            emit(Result.failure(IPFSException(cause = ex)))
-            ipfs.stopCatching()
-            return@flow
-        }
+        var ipfs: EmbeddedIpfs = ipfsCreate()
+        var pingController: PingController? = null
 
         while (currentCoroutineContext().isActive) {
             try {
-                val time = pingInitiator.ping().await()
+                if (pingController == null) {
+                    pingController = createPingController(
+                        ipfs,
+                        peerId,
+                        multiaddr
+                    )
+                }
+                val time = pingController.ping().await()
                 emit(Result.success(time))
             } catch (ex: CancellationException) {
                 ipfs.stopCatching()
@@ -71,9 +66,15 @@ class IpfsStreamerImpl(
                     )
                 )
             } catch (ex: ConnectionClosedException) {
-                emit(Result.failure(IPFSException(cause = ex)))
+                pingController = null
                 ipfs.stopCatching()
-                break
+                ipfs = ipfsCreate()
+                Log.d(
+                    this@IpfsStreamerImpl::class.simpleName,
+                    "ping: ConnectionClosedException, restarting node and ping controller",
+                    ex
+                )
+                continue
             } catch (ex: Exception) {
                 emit(Result.failure(IPFSException(cause = ex)))
             }
@@ -84,6 +85,17 @@ class IpfsStreamerImpl(
 
     }.flowOn(ioDispatcher)
 
+    private suspend fun createPingController(
+        ipfs: EmbeddedIpfs,
+        peerId: PeerId,
+        multiaddr: Multiaddr
+    ): PingController {
+        return ipfs.node.newStream<PingProtocol.PingInitiator>(
+            listOf("/ipfs/ping/1.0.0"),
+            peerId,
+            multiaddr
+        ).controller.await()
+    }
 
     /**
      * @throws IPFSException если не удалось получить блоки
@@ -121,7 +133,7 @@ class IpfsStreamerImpl(
 }
 
 
-fun EmbeddedIpfs.stopCatching() {
+suspend fun EmbeddedIpfs.stopCatching(): Unit = withContext(NonCancellable) {
     try {
         stop()
     } catch (ex: Exception) {

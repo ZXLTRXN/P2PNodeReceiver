@@ -62,11 +62,16 @@ fun Flow<String>.mapToNodeState(
 ): Flow<NodeScreenState> = this.transformLatest { cidString ->
     emit(NodeScreenState.Loading)
 
-    val blocks = ipfsStreamer.getBlocks(cidString)
+    val blocks: List<ByteArray> = ipfsStreamer.getBlocks(cidString)
     if (blocks.isEmpty()) {
         emit(NodeScreenState.Empty)
     } else {
-        emit(NodeScreenState.Success(blocks[0].decodeToString()))
+
+        val cleanString = blocks[0].decodeToString().replace(
+            "\uFFFD", // Malformed byte sequences are replaced by this in decodeToString()
+            ""
+        ).trim()
+        emit(NodeScreenState.Success(cleanString))
     }
 }.catch { th ->
     Log.e(
